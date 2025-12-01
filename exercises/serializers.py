@@ -360,6 +360,7 @@ class ExerciseCreateSerializer(serializers.ModelSerializer):
 
 class ExerciseListSerializer(serializers.ModelSerializer):
     muscle_group_display = serializers.CharField(source='get_muscle_group_display', read_only=True)
+    secondary_muscles = serializers.SerializerMethodField()
     difficulty_display = serializers.CharField(source='get_difficulty_display', read_only=True)
     equipment_display = serializers.CharField(source='get_equipment_display', read_only=True)
     image_url = serializers.SerializerMethodField()
@@ -370,9 +371,21 @@ class ExerciseListSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'muscle_group_display',
+            'secondary_muscles',
             'difficulty_display',
             'equipment_display',
             'image_url',
+        ]
+
+    def get_secondary_muscles(self, obj):
+        if not obj.secondary_muscles:
+            return []
+
+        MUSCLE_DICT = dict(Exercise.MUSCLE_GROUP)
+
+        return [
+            MUSCLE_DICT.get(m, m)
+            for m in obj.secondary_muscles
         ]
 
     def get_image_url(self, obj):

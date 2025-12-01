@@ -70,24 +70,29 @@ def exercise_search_by_name(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def exercise_list_by_muscle_group(request):
-    muscle_group = request.query_params.get('muscle_group', '').strip()
+    muscles = request.query_params.getlist('muscle_group')
 
-    if not muscle_group:
+    # Si no vino getlist (solo vino uno con comas)
+    if len(muscles) == 1 and ',' in muscles[0]:
+        muscles = [m.strip() for m in muscles[0].split(',')]
+
+    if not muscles:
         return Response(
-            {"error": "Necesitas ingresar el músculo a filtrar"},
+            {"error": "Necesitas ingresar al menos un músculo a filtrar"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Validar que el muscle_group esté en las opciones
     valid_groups = [choice[0] for choice in Exercise.MUSCLE_GROUP]
-    if muscle_group not in valid_groups:
+    invalid = [m for m in muscles if m not in valid_groups]
+
+    if invalid:
         return Response(
-            {"error": f"Grupo muscular no válido. Opciones: {valid_groups}"},
+            {"error": f"Los siguientes grupos no son válidos: {invalid}. Opciones: {valid_groups}"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     exercises = Exercise.objects.filter(
-        muscle_group=muscle_group,
+        muscle_group__in=muscles,
         is_active=True
     )
 
@@ -98,48 +103,60 @@ def exercise_list_by_muscle_group(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def exercise_list_by_difficulty(request):
-    difficulty = request.query_params.get('difficulty', '').strip()
+    difficulties = request.query_params.getlist('difficulty')
 
-    if not difficulty:
+    if len(difficulties) == 1 and ',' in difficulties[0]:
+        difficulties = [d.strip() for d in difficulties[0].split(',')]
+
+    if not difficulties:
         return Response(
-            {"error": "Necesitas ingresar la dificultad a filtrar"},
+            {"error": "Necesitas ingresar al menos una dificultad"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     valid_diff = [choice[0] for choice in Exercise.DIFFICULTY]
-    if difficulty not in valid_diff:
+    invalid = [d for d in difficulties if d not in valid_diff]
+
+    if invalid:
         return Response(
-            {"error": f"Dificultad no válida. Opciones: {valid_diff}"},
+            {"error": f"Dificultades no válidas: {invalid}. Opciones: {valid_diff}"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     exercises = Exercise.objects.filter(
-        difficulty=difficulty,
+        difficulty__in=difficulties,
         is_active=True
     )
+
     serializer = ExerciseListSerializer(exercises, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def exercise_list_by_equipment(request):
-    equipment = request.query_params.get('equipment', '').strip()
+    equipments = request.query_params.getlist('equipment')
 
-    if not equipment:
+    if len(equipments) == 1 and ',' in equipments[0]:
+        equipments = [e.strip() for e in equipments[0].split(',')]
+
+    if not equipments:
         return Response(
-            {"error": "Necesitas ingresar el equipo disponible"},
+            {"error": "Necesitas ingresar al menos un equipo"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     valid_eqp = [choice[0] for choice in Exercise.EQUIPMENT]
-    if equipment not in valid_eqp:
+    invalid = [e for e in equipments if e not in valid_eqp]
+
+    if invalid:
         return Response(
-            {"error": f"Equipo no válido. Opciones: {valid_eqp}"},
+            {"error": f"Equipos no válidos: {invalid}. Opciones: {valid_eqp}"},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     exercises = Exercise.objects.filter(
-        equipment=equipment,
+        equipment__in=equipments,
         is_active=True
     )
 
